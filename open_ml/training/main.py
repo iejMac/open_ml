@@ -23,8 +23,6 @@ from torch.distributed.fsdp import (
     MixedPrecision,
     BackwardPrefetch,
     ShardingStrategy,
-    FullStateDictConfig,
-    StateDictType,
     CPUOffload,
 )
 from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
@@ -209,12 +207,12 @@ def main(args):
     random_seed(args.seed, 0)
 
     model = None
-    with torch.device("meta" if args.fsdp else args.device):
-        model, preprocess_fns = create_model_and_transforms(
-            args.model, 
-            args.pretrained,
-            device=args.device,
-        )
+    # with torch.device("meta" if args.fsdp else args.device):
+    model, preprocess_fns = create_model_and_transforms(
+        args.model, 
+        args.pretrained,
+        device=args.device,
+    )
     if not args.fsdp:
         model.reset_parameters()
 
@@ -222,26 +220,6 @@ def main(args):
 
     if args.distributed:
         if args.fsdp:
-            transformer_layer_cls = None
-
-            if args.hf_model is not None:
-                # retrive the user specified block class for fsdp
-                for _, target_cls in model.named_modules():
-                    if args.hf_fsdp_block in type(target_cls).__name__:
-                        transformer_layer_cls = {type(target_cls)}
-                        break
-
-                if transformer_layer_cls is None:
-                    print(f"--hf-fsdp-block {args.hf_fsdp_block} not found in --hf-model {args.hf_model}")
-                    return -1
-
-            else:
-                transformer_layer_cls = {Block}
-            # from https://pytorch.org/blog/efficient-large-scale-training-with-pytorch/
-            transformer_auto_wrapper_policy = functools.partial(
-                transformer_auto_wrap_policy,
-                transformer_layer_cls=transformer_layer_cls,
-            )
             # tries to follow gopher...
             mp_policy = None
             if args.fsdp_amp:
@@ -279,7 +257,6 @@ def main(args):
             random_seed(args.seed, rank=0)
             model = FSDP(
                 model,
-                auto_wrap_policy=transformer_auto_wrapper_policy,
                 device_id=device,
                 mixed_precision=mp_policy,
                 cpu_offload=CPUOffload(offload_params=args.fsdp_cpu_offload),
