@@ -16,6 +16,8 @@ def _read_reqs(relpath):
 
 
 REQUIREMENTS = _read_reqs("requirements.txt")
+TRAINING_REQUIREMENTS = _read_reqs("requirements-training.txt")
+20  
 
 setuptools.setup(
     name="open_ml",
@@ -45,10 +47,13 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     install_requires=REQUIREMENTS,
+    extras_require={
+        "training": TRAINING_REQUIREMENTS,
+    },
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/iejMac/open_ml",
     license="MIT",
-    packages=find_packages(),
+    packages=find_packages(where='open_ml'),
     include_package_data=True,
 )

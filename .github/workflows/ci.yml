@@ -23,7 +23,7 @@ jobs:
           python3 -m venv .env
           source .env/bin/activate
           python -m pip install -U pip
-          make install-dev
+          make install-test
       - name: Lint
         run: |
           source .env/bin/activate
@@ -46,7 +46,7 @@ jobs:
         python3 -m venv .env
         source .env/bin/activate
         make install
-        make install-dev
+        make install-test
     - name: Unit tests
       run: |
         source .env/bin/activate
