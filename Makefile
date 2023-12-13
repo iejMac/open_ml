@@ -2,8 +2,11 @@ install: ## [Local development] Upgrade pip, install requirements, install packa
 	python -m pip install -U pip
 	python -m pip install -e .
 
-install-dev: ## [Local development] Install test requirements
-	python -m pip install -r requirements_test.txt
+install-training:
+	python -m pip install -r requirements-training.txt
+
+install-test: ## [Local development] Install test requirements
+	python -m pip install -r requirements-test.txt
 
 lint: ## [Local development] Run mypy, pylint and black
 	python -m black --check -l 120 open_ml
