@@ -30,8 +30,8 @@ def download_dataset(data_dir, split):
         # Write to tar file
         sink.write({
             "__key__": f"sample{index:06d}",
-            "input.png": image_bytes,
-            "output.txt": label_str,
+            "png": image_bytes,
+            "txt": label_str,
         })
 
     sink.close()
