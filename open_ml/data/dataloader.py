@@ -46,28 +46,6 @@ class DataInfo:
             self.sampler.set_epoch(epoch)
 
 
-def expand_urls(urls, weights=None):
-    if weights is None:
-        expanded_urls = wds.shardlists.expand_urls(urls)
-        return expanded_urls, None
-    if isinstance(urls, str):
-        urllist = urls.split("::")
-        weights = weights.split('::')
-        assert len(weights) == len(urllist),\
-            f"Expected the number of data components ({len(urllist)}) and weights({len(weights)}) to match."
-        weights = [float(weight) for weight in weights]
-        all_urls, all_weights = [], []
-        for url, weight in zip(urllist, weights):
-            expanded_url = list(braceexpand.braceexpand(url))
-            expanded_weights = [weight for _ in expanded_url]
-            all_urls.extend(expanded_url)
-            all_weights.extend(expanded_weights)
-        return all_urls, all_weights
-    else:
-        all_urls = list(urls)
-        return all_urls, weights
-
-
 def log_and_continue(exn):
     """Call in an exception handler to ignore any exception, issue a warning, and continue."""
     logging.warning(f'Handling webdataset error ({repr(exn)}). Ignoring.')
@@ -166,6 +144,7 @@ _SAMPLE_SHUFFLE_INITIAL = 1000
 def get_wds_dataset(args, preprocess_fns, is_train, epoch=0):
     input_shards = args.train_data if is_train else args.val_data
     assert input_shards is not None
+    input_shards = list(braceexpand.braceexpand(input_shards[0]))
 
     num_shards = None
     if is_train:
@@ -224,7 +203,7 @@ def get_wds_dataset(args, preprocess_fns, is_train, epoch=0):
     dataset = wds.DataPipeline(*pipeline)
 
     if is_train:
-        num_shards = len(expand_urls(input_shards)[0])
+        num_shards = len(input_shards)
         assert num_shards >= args.workers * args.world_size, 'number of shards must be >= total workers'
         # roll over and repeat a few samples to get same number of full batches on each node
         global_batch_size = args.batch_size * args.world_size
