@@ -8,10 +8,7 @@ import yaml
 
 def get_default_params(model_name):
     model_name = model_name.lower()
-    if "vit" in model_name:
-        return {"lr": 5.0e-4, "beta1": 0.9, "beta2": 0.98, "eps": 1.0e-6}
-    else:
-        return {"lr": 5.0e-4, "beta1": 0.9, "beta2": 0.999, "eps": 1.0e-8}
+    return {"lr": 5.0e-4, "beta1": 0.9, "beta2": 0.999, "eps": 1.0e-8}
 
 
 class ParseKwargs(argparse.Action):
@@ -91,27 +88,6 @@ def parse_args(args):
         help="Path to file(s) with training data. When using webdataset, multiple datasources can be combined using the `::` separator.",
     )
     parser.add_argument(
-        "--train-data-mix-weights",
-        type=float,
-        nargs="+",
-        default=None,
-        help=(
-            "When using multiple data sources with webdataset and sampling with replacement, this can be used to upsample specific data sources. "
-            "Similar to --train-data, this should be a string with as many numbers as there are data sources, separated by `::` (e.g. 1::2::0.5) "
-            "By default, datapoints are sampled uniformly regardless of the dataset sizes."
-        ),
-    )
-    parser.add_argument(
-        "--train-data-upsampling-factors",
-        type=str,
-        default=None,
-        help=(
-            "When using multiple data sources with webdataset and sampling with replacement, this can be used to upsample specific data sources. "
-            "Similar to --train-data, this should be a string with as many numbers as there are data sources, separated by `::` (e.g. 1::2::0.5) "
-            "By default, datapoints are sampled uniformly regardless of the dataset sizes."
-        ),
-    )
-    parser.add_argument(
         "--val-data",
         type=str,
         default=None,
@@ -134,25 +110,6 @@ def parse_args(args):
         choices=["webdataset", "synthetic"],
         default="webdataset",
         help="Which type of dataset to process.",
-    )
-    parser.add_argument(
-        "--dataset-resampled",
-        default=False,
-        action="store_true",
-        help="Whether to use sampling with replacement for webdataset shard selection.",
-    )
-    parser.add_argument(
-        "--dataset-manifest",
-        type=str,
-        nargs="+",
-        default=None,
-        help="Uses manifest to construct a train set.",
-    )
-    parser.add_argument(
-        "--disable-buffer",
-        action="store_true",
-        default=False,
-        help="Turns off the shuffle buffer.",
     )
     parser.add_argument(
         "--logs",
@@ -188,24 +145,6 @@ def parse_args(args):
     parser.add_argument("--eps", type=float, default=None, help="Adam epsilon.")
     parser.add_argument("--wd", type=float, default=0.2, help="Weight decay.")
     parser.add_argument("--warmup", type=int, default=10000, help="Number of steps to warmup for.")
-    parser.add_argument(
-        "--z-loss-coefficient",
-        type=float,
-        default=0.0,
-        help="regularization term to make sure logits not too big, based on: https://github.com/google-research/t5x/blob/main/t5x/losses.py#L33-L38",
-    )
-    parser.add_argument(
-        "--log-logit-mean",
-        default=False,
-        action="store_true",
-        help="Whether to log the logit mean to wandb etc.",
-    )
-    parser.add_argument(
-        "--use-bn-sync",
-        default=False,
-        action="store_true",
-        help="Whether to use batch norm sync.",
-    )
     parser.add_argument(
         "--skip-scheduler",
         action="store_true",
@@ -256,12 +195,6 @@ def parse_args(args):
         help="How often to run evaluation with val-data (in epochs). Last epoch validated if val-data provided.",
     )
     parser.add_argument(
-        "--val-batch-size",
-        type=int,
-        default=None,
-        help="Batch size to be used with val-data.",
-    )
-    parser.add_argument(
         "--resume",
         default=None,
         type=str,
@@ -296,18 +229,6 @@ def parse_args(args):
         default=False,
         action="store_true",
         help="Enable gradient checkpointing.",
-    )
-    parser.add_argument(
-        "--torchscript",
-        default=False,
-        action="store_true",
-        help="torch.jit.script the model",
-    )
-    parser.add_argument(
-        "--trace",
-        default=False,
-        action="store_true",
-        help="torch.jit.trace the model for inference / eval only",
     )
     parser.add_argument(
         "--accum-freq",
@@ -398,20 +319,6 @@ def parse_args(args):
         help="If true, more information is logged.",
     )
     parser.add_argument(
-        "--average",
-        type=str,
-        nargs="+",
-        default=None,
-        help=("Apply model average on these checkpoints with the specified coefficients by --average-coefficients."),
-    )
-    parser.add_argument(
-        "--average-coefficients",
-        type=float,
-        nargs="+",
-        default=None,
-        help=("Average the model weights with the specified coefficients, model weights specified by --average."),
-    )
-    parser.add_argument(
         "--copy-codebase",
         default=False,
         action="store_true",
@@ -462,21 +369,6 @@ def parse_args(args):
         help="If true, delete previous checkpoint after storing a new one.",
     )
     parser.add_argument(
-        "--distill-model",
-        default=None,
-        help="Which model arch to distill from, if any.",
-    )
-    parser.add_argument(
-        "--distill-pretrained",
-        default=None,
-        help="Which pre-trained weights to distill from, if any.",
-    )
-    parser.add_argument(
-        "--use-bnb-linear",
-        default=None,
-        help="Replace the network linear layers from the bitsandbytes library. " "Allows int8 training/inference, etc.",
-    )
-    parser.add_argument(
         "--ignore-parse-errors",
         action="store_true",
         default=False,
@@ -499,10 +391,5 @@ def parse_args(args):
     if args.dataset_type == "synthetic":
         assert args.train_data is None, "--train-data must not be specified if --dataset-type='synthetic'"
         assert args.dataset_manifest is None, "--dataset-manifest must not be specified if --dataset-type='synthetic'"
-
-    if args.val_data is not None and args.val_batch_size is None:
-        # if not set explicitly make sure that the val batch size is set to the micro batch size
-
-        args.val_batch_size = args.batch_size // args.accum_freq
 
     return args

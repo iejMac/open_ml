@@ -47,8 +47,6 @@ from open_ml.training.logger import setup_logging
 from open_ml.training.params import parse_args
 from open_ml.training.scheduler import cosine_lr, const_lr, const_lr_cooldown
 from open_ml.training.train import train_one_epoch, evaluate
-
-# TODO: what do we need?
 from open_ml.training.file_utils import (
     save_checkpoint,
     get_latest_checkpoint,
@@ -375,10 +373,7 @@ def main(args):
     # create scheduler if train
     scheduler = None
     if requires_training:
-        if args.dataset_manifest is not None:
-            total_steps = (args.train_num_samples * args.epochs) // (args.batch_size * args.world_size)
-        else:
-            total_steps = (data["train"].dataloader.num_batches) * args.epochs
+        total_steps = (data["train"].dataloader.num_batches) * args.epochs
 
         if args.lr_scheduler == "cosine":
             scheduler = cosine_lr(
