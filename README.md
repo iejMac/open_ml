@@ -59,13 +59,20 @@ model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrai
 
 We advise you first create a virtual environment with:
 
-```
+```bash
 python3 -m venv .env
 source .env/bin/activate
 pip install -U pip
 ```
 
 You can then install openclip for training with `pip install 'open_clip_torch[training]'`.
+
+### Data
+
+To prepare the data (for this example implementation) you can run:
+```bash
+python -m open_ml.data.download --data-dir ./data
+```
 
 #### Development
 
